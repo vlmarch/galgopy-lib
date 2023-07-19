@@ -174,11 +174,14 @@ class Crossover(ABC):
 
     def _select_parents(self):
         if self._proportionate_selection:
+            weights = [p.fitness for p in self._parents]
+            if sum(weights) == 0:
+                weights = [1] * len(weights)
             selected_parents = random.choices(
-                self._parents, weights=[p.fitness for p in self._parents], k=2
+                self._parents, weights=weights, k=2
             )
         else:
-            selected_parents = random.choices(self._parents, k=2)
+            selected_parents = random.sample(self._parents, k=2)
         return tuple(selected_parents)
 
     @abstractmethod
@@ -216,28 +219,33 @@ class MultipointCrossover(Crossover):
         for i in range(round(self._next_population_size / 2)):
             p1, p2 = self._select_parents()
 
-            print(p1)
-            print(p2)
-
             cut_points = sorted(
-                random.choices(
-                    list(range(1, len(p1))), k=self._cut_points_count
-                )
+                random.sample(range(1, len(p1)), k=self._cut_points_count)
             )
-            print(cut_points)
-            for i, cp in enumerate(cut_points):
-                if i == 0:
-                    c1 = p1[:cp] + p2[cp:]
-                    c2 = p2[:cp] + p1[cp:]
-                if i % 2:
-                    c1 = c1[:cp] + c2[cp:]
-                    c2 = c2[:cp] + c1[cp:]
-                else:
-                    c1 = c2[:cp] + c1[cp:]
-                    c2 = c1[:cp] + c2[cp:]
 
-            print(Chromosome(c1))
-            print(Chromosome(c2))
+            c1 = []
+            c2 = []
+
+            for i in range(len(cut_points) + 1):
+                if i == 0:
+                    c1 += p2[: cut_points[i]]
+                    c2 += p1[: cut_points[i]]
+                elif i == len(cut_points):
+                    if i % 2:
+                        c1 += p1[cut_points[i - 1] :]
+                        c2 += p2[cut_points[i - 1] :]
+                    else:
+                        c1 += p2[cut_points[i - 1] :]
+                        c2 += p1[cut_points[i - 1] :]
+                elif i % 2:
+                    c1 += p1[cut_points[i - 1] : cut_points[i]]
+                    c2 += p2[cut_points[i - 1] : cut_points[i]]
+                else:
+                    c1 += p2[cut_points[i - 1] : cut_points[i]]
+                    c2 += p1[cut_points[i - 1] : cut_points[i]]
+            new_population_list.append(Chromosome(c1))
+            new_population_list.append(Chromosome(c2))
+        return Population(new_population_list)
 
 
 # class UniformCrossover(Crossover):
@@ -272,15 +280,15 @@ if __name__ == "__main__":
 
     ct = ChromosomeTemplate(
         [
-            gtypes.StrType(),
-            gtypes.StrType(),
-            gtypes.StrType(),
-            gtypes.StrType(),
-            gtypes.StrType(),
-            gtypes.StrType(),
-            gtypes.StrType(),
-            gtypes.StrType(),
-            gtypes.StrType(),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
+            gtypes.StrType("lowercase"),
         ]
     )
     print(ct)
