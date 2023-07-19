@@ -135,6 +135,14 @@ class Population:
             "\n    ".join([str(c) for c in self._chromosome_list])
         )
 
+    @property
+    def chromosome_list(self):
+        return self._chromosome_list
+
+    @chromosome_list.setter
+    def chromosome_list(self, value):
+        raise ValueError()
+
     def fitness(self, func, mode="maximize"):
         for c in self._chromosome_list:
             c.fitness = func(c)
@@ -255,6 +263,28 @@ class MultipointCrossover(Crossover):
 #     def get_parents(self):
 #         pass
 
+################################################################################
+
+
+class Mutation(ABC):
+    def __init__(self, population, mutation_probability=0.01) -> None:
+        super().__init__()
+        self._population = population
+        self._mutation_probability = mutation_probability
+
+    @abstractmethod
+    def apply_mutations(self):
+        pass
+
+
+class RandomMutation(Mutation):
+    def apply_mutations(self):
+        for c in self._population.chromosome_list:
+            for i, g in enumerate(c.genes_list):
+                if random.random() <= self._mutation_probability:
+                    c.genes_list[i] = Gene.generate_random_gene(g.gene_type)
+        return self._population
+
 
 ################################################################################
 
@@ -263,9 +293,7 @@ def fitness_calculation(chromosome):
     return sum(
         [
             g.value == l
-            for g, l in zip(
-                chromosome.genes_list, ["a", "b", "c", "d", "e", "r", "t", "o"]
-            )
+            for g, l in zip(chromosome.genes_list, ["v", "l", "a", "d"])
         ]
     )
 
@@ -278,31 +306,20 @@ if __name__ == "__main__":
     init_population_size = 10
     parents_count = 2
 
-    ct = ChromosomeTemplate(
-        [
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-            gtypes.StrType("lowercase"),
-        ]
-    )
-    print(ct)
+    ct = ChromosomeTemplate([gtypes.StrType("lowercase")] * 4)
 
-    c = Chromosome.generate_random_chromosome(ct)
-    print(c)
+    population = Population.generate_random_population(init_population_size, ct)
+    fitness = 0
 
-    p = Population.generate_random_population(init_population_size, ct)
-    # print(p)
-    p.fitness(fitness_calculation)
-    # print(p)
-    parents = p.get_parents(parents_count)
+    while fitness != 4:
+        population.fitness(fitness_calculation)
+        parents = population.get_parents(parents_count)
 
-    # print(parents)
-    cross = MultipointCrossover(parents, init_population_size)
-    new_population = cross.generate_new_population()
-    print(new_population)
+        fitness = parents[0].fitness
+        print(parents[0])
+
+        crossover = MultipointCrossover(parents, init_population_size)
+        population = crossover.generate_new_population()
+
+        mutation = RandomMutation(population, mutation_probability=0.1)
+        population = mutation.apply_mutations()
