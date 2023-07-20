@@ -1,9 +1,9 @@
 import os
 import sys
 
-import pytest
-
 sys.path.append(os.getcwd())
+
+import pytest
 
 import galgopy.gtypes as gtypes
 
