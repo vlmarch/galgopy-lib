@@ -135,6 +135,9 @@ class Population:
             "\n    ".join([str(c) for c in self._chromosome_list])
         )
 
+    def __len__(self) -> int:
+        return len(self._chromosome_list)
+
     @property
     def chromosome_list(self):
         return self._chromosome_list
@@ -157,6 +160,10 @@ class Population:
             raise ValueError()
         return self._chromosome_list[:parents_count]
 
+    def apply_mutation(self, mutation):
+        for i, chromosome in enumerate(self._chromosome_list):
+            self._chromosome_list[i] = mutation._apply_mutation(chromosome)
+
     @staticmethod
     def generate_random_population(
         population_size, chromosome_tmplt: ChromosomeTemplate
@@ -172,36 +179,30 @@ class Population:
 ################################################################################
 
 
-class Crossover(ABC):
-    def __init__(
-        self, parents, next_population_size, proportionate_selection=True
-    ) -> None:
-        self._parents = parents
-        self._next_population_size = next_population_size
+class AbstractCrossover(ABC):
+    def __init__(self, proportionate_selection=True) -> None:
         self._proportionate_selection = proportionate_selection
 
-    def _select_parents(self, count=2):
+    def _select_parents(self, parents, count=2):
         if self._proportionate_selection:
-            weights = [p.fitness for p in self._parents]
+            weights = [p.fitness for p in parents]
             if sum(weights) == 0:
                 weights = [1] * len(weights)
-            selected_parents = random.choices(
-                self._parents, weights=weights, k=count
-            )
+            selected_parents = random.choices(parents, weights=weights, k=count)
         else:
             selected_parents = random.sample(self._parents, k=count)
         return tuple(selected_parents)
 
     @abstractmethod
-    def generate_new_population(self):
+    def generate_new_population(self, parents, next_population_size):
         pass
 
 
-class OnePointCrossover(Crossover):
-    def generate_new_population(self):
+class OnePointCrossover(AbstractCrossover):
+    def generate_new_population(self, parents, next_population_size):
         new_population_list = []
-        for _ in range(round(self._next_population_size / 2)):
-            p1, p2 = self._select_parents()
+        for _ in range(round(next_population_size / 2)):
+            p1, p2 = self._select_parents(parents)
             cut_point = random.randint(1, len(p1) - 1)
             c1 = Chromosome(p1[:cut_point] + p2[cut_point:])
             c2 = Chromosome(p2[:cut_point] + p1[cut_point:])
@@ -211,21 +212,19 @@ class OnePointCrossover(Crossover):
         return Population(new_population_list)
 
 
-class MultipointCrossover(Crossover):
+class MultipointCrossover(AbstractCrossover):
     def __init__(
         self,
-        parents,
-        next_population_size,
         proportionate_selection=True,
         cut_points_count=3,
     ) -> None:
-        super().__init__(parents, next_population_size, proportionate_selection)
+        super().__init__(proportionate_selection)
         self._cut_points_count = cut_points_count
 
-    def generate_new_population(self):
+    def generate_new_population(self, parents, next_population_size):
         new_population_list = []
-        for _ in range(round(self._next_population_size / 2)):
-            p1, p2 = self._select_parents()
+        for _ in range(round(next_population_size / 2)):
+            p1, p2 = self._select_parents(parents)
 
             cut_points = sorted(
                 random.sample(range(1, len(p1)), k=self._cut_points_count)
@@ -256,11 +255,11 @@ class MultipointCrossover(Crossover):
         return Population(new_population_list)
 
 
-class UniformCrossover(Crossover):
-    def generate_new_population(self):
+class UniformCrossover(AbstractCrossover):
+    def generate_new_population(self, parents, next_population_size):
         new_population_list = []
-        for _ in range(round(self._next_population_size / 2)):
-            p1, p2 = self._select_parents()
+        for _ in range(round(next_population_size / 2)):
+            p1, p2 = self._select_parents(parents)
 
             c1 = []
             c2 = []
@@ -281,24 +280,64 @@ class UniformCrossover(Crossover):
 ################################################################################
 
 
-class Mutation(ABC):
-    def __init__(self, population, mutation_probability=0.01) -> None:
+class AbstractMutation(ABC):
+    def __init__(self, mutation_probability=0.01) -> None:
         super().__init__()
-        self._population = population
         self._mutation_probability = mutation_probability
 
     @abstractmethod
-    def apply_mutations(self):
+    def _apply_mutation(self, chromosome):
         pass
 
 
-class RandomMutation(Mutation):
-    def apply_mutations(self):
-        for c in self._population.chromosome_list:
-            for i, g in enumerate(c.genes_list):
-                if random.random() <= self._mutation_probability:
-                    c.genes_list[i] = Gene.generate_random_gene(g.gene_type)
-        return self._population
+class RandomMutation(AbstractMutation):
+    def _apply_mutation(self, chromosome):
+        for i, g in enumerate(chromosome.genes_list):
+            if random.random() <= self._mutation_probability:
+                chromosome.genes_list[i] = Gene.generate_random_gene(
+                    g.gene_type
+                )
+        return chromosome
+
+
+################################################################################
+
+
+class GA:
+    def __init__(
+        self,
+        population,
+        parents_count=2,
+        crossover=UniformCrossover(),
+        mutation=RandomMutation(),
+        max_generations=10000,
+        expected_fitness=None,
+    ) -> None:
+        self._population = population
+        self._crossover = crossover
+        self._mutation = mutation
+        self._max_generations = max_generations
+        self._expected_fitness = expected_fitness
+
+    def start(self):
+        temp_fitnes = 0
+        generation = 1
+        while not (
+            (self._expected_fitness == temp_fitnes)
+            or (generation == self._max_generations)
+        ):
+            self._population.fitness(fitness_calculation)
+            parents = self._population.get_parents(parents_count)
+
+            temp_fitnes = parents[0].fitness
+            print(f"Generation {generation} : {parents[0]}")
+
+            population = self._crossover.generate_new_population(
+                parents, len(self._population)
+            )
+            population.apply_mutation(self._mutation)
+            self._population = population
+            generation += 1
 
 
 ################################################################################
@@ -308,7 +347,7 @@ def fitness_calculation(chromosome):
     return sum(
         [
             g.value == l
-            for g, l in zip(chromosome.genes_list, ["v", "l", "a", "d"])
+            for g, l in zip(chromosome.genes_list, list("beornottobe"))
         ]
     )
 
@@ -321,23 +360,14 @@ if __name__ == "__main__":
     init_population_size = 10
     parents_count = 2
 
-    ct = ChromosomeTemplate([gtypes.StrType("lowercase")] * 4)
-
+    ct = ChromosomeTemplate([gtypes.StrType("lowercase")] * 11)
     population = Population.generate_random_population(init_population_size, ct)
-    fitness = 0
 
-    while fitness != 4:
-        population.fitness(fitness_calculation)
-        parents = population.get_parents(parents_count)
-
-        fitness = parents[0].fitness
-        print(parents[0])
-
-        # crossover = MultipointCrossover(parents, init_population_size)
-        # population = crossover.generate_new_population()
-
-        crossover = UniformCrossover(parents, init_population_size)
-        population = crossover.generate_new_population()
-
-        mutation = RandomMutation(population, mutation_probability=0.1)
-        population = mutation.apply_mutations()
+    ga = GA(
+        population,
+        6,
+        MultipointCrossover(),
+        RandomMutation(mutation_probability=0.01),
+        expected_fitness=11,
+    )
+    ga.start()
