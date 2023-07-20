@@ -4,7 +4,7 @@ import string
 from abc import ABC, abstractmethod
 
 
-class GeneType(ABC):
+class AbstractGeneType(ABC):
     def __init__(self) -> None:
         pass
 
@@ -25,7 +25,7 @@ class GeneType(ABC):
         pass
 
 
-class BinaryType(GeneType):
+class BinaryType(AbstractGeneType):
     def __eq__(self, __o: object) -> bool:
         return isinstance(__o, type(self))
 
@@ -39,7 +39,7 @@ class BinaryType(GeneType):
         return n in [0, 1]
 
 
-class IntType(GeneType):
+class IntType(AbstractGeneType):
     def __init__(self, min_val=0, max_val=9) -> None:
         super().__init__()
         self._min_val = min(min_val, max_val)
@@ -62,7 +62,7 @@ class IntType(GeneType):
         return n in range(self._min_val, self._max_val + 1)
 
 
-class FloatType(GeneType):
+class FloatType(AbstractGeneType):
     def __init__(self, min_val=0, max_val=9, ndigits=2) -> None:
         super().__init__()
         self._min_val = min(min_val, max_val)
@@ -90,7 +90,7 @@ class FloatType(GeneType):
         )
 
 
-class StrType(GeneType):
+class StrType(AbstractGeneType):
     def __init__(self, mode="all") -> None:
         super().__init__()
         if mode not in ["all", "lowercase", "uppercase"]:
