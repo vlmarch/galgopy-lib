@@ -114,3 +114,24 @@ class StrType(AbstractGeneType):
 
     def validate(self, n):
         return n in self._data
+
+
+class CostumeType(AbstractGeneType):
+    def __init__(self, costume_data: list) -> None:
+        super().__init__()
+        self._costume_data = costume_data
+
+    def __str__(self) -> str:
+        return "CostumeType()"
+
+    def __eq__(self, __o: object) -> bool:
+        return (
+            isinstance(__o, type(self))
+            and self._costume_data == __o._costume_data
+        )
+
+    def get_random_val(self):
+        return random.choice(self._costume_data)
+
+    def validate(self, n):
+        return n in self._costume_data

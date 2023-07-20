@@ -1,15 +1,26 @@
 import random
 from abc import ABC, abstractmethod
 
-import gtypes
-
-################################################################################
+from .gtypes import *
 
 
 class Gene:
-    def __init__(self, value=0, gene_type=gtypes.BinaryType()) -> None:
+    """Gene implementation."""
+
+    def __init__(self, value=0, gene_type=BinaryType()) -> None:
+        """Gene - one of the elements of the chromosome.
+
+        Args:
+            value (int, optional): The value the gene takes. Defaults to 0.
+            gene_type (GeneType(), optional): Gene type. Defaults to BinaryType().
+
+        Raises:
+            ValueError: The value of a gene does not correspond to its type.
+        """
         if not gene_type.validate(value):
-            raise ValueError()
+            raise ValueError(
+                "The given gene value does not correspond to its type."
+            )
         self._value = value
         self._gene_type = gene_type
 
@@ -18,6 +29,7 @@ class Gene:
 
     @property
     def value(self):
+        """The value of the gene."""
         return self._value
 
     @value.setter
@@ -28,6 +40,7 @@ class Gene:
 
     @property
     def gene_type(self):
+        """Gene type."""
         return self._gene_type
 
     @gene_type.setter
@@ -35,12 +48,28 @@ class Gene:
         raise ValueError()
 
     @staticmethod
-    def generate_random_gene(gene_type=gtypes.BinaryType()):
+    def generate_random_gene(gene_type=BinaryType()):
+        """Generates a gene with a random value.
+
+        Args:
+            gene_type (GeneType(), optional): Gene type. Defaults to BinaryType().
+
+        Returns:
+            Gene(): Gene with random value.
+        """
         return Gene(gene_type.get_random_val(), gene_type)
 
 
 class ChromosomeTemplate:
-    def __init__(self, types_list=[gtypes.BinaryType() for i in range(8)]):
+    """Chromosome template implementation."""
+
+    def __init__(self, types_list=[BinaryType() for i in range(8)]):
+        """Chromosome template - chromosomes pattern consist of a list of gene types.
+
+        Args:
+            types_list (list, optional): List of gene types included in the
+                chromosome. Defaults to [BinaryType() for i in range(8)].
+        """
         self._types_list = types_list
 
     def __str__(self) -> str:
@@ -53,6 +82,7 @@ class ChromosomeTemplate:
 
     @property
     def types_list(self):
+        """List of gene types included in the chromosome."""
         return self._types_list
 
     @types_list.setter
@@ -61,11 +91,22 @@ class ChromosomeTemplate:
 
 
 class Chromosome:
+    """Chromosome implementation."""
+
     def __init__(self, genes_list=[Gene() for i in range(8)]):
-        if any([g.gene_type != genes_list[0].gene_type for g in genes_list]):
-            raise ValueError
-        elif not genes_list:
-            raise ValueError("Invalid genes list")
+        """Chromosome - is composed of genes.
+
+        Args:
+            genes_list (list, optional): List of genes contained in the
+                chromosome. Defaults to [Gene() for i in range(8)].
+
+        Raises:
+            ValueError: Invalid list of gens.
+        """
+        if not genes_list or any([not isinstance(g, Gene) for g in genes_list]):
+            raise ValueError(
+                "Invalid list of gens. The list should contain only genes."
+            )
         self._genes_list = genes_list
         self._chromosome_tmplt = ChromosomeTemplate(
             [g.gene_type for g in genes_list]
@@ -190,7 +231,7 @@ class AbstractCrossover(ABC):
                 weights = [1] * len(weights)
             selected_parents = random.choices(parents, weights=weights, k=count)
         else:
-            selected_parents = random.sample(self._parents, k=count)
+            selected_parents = random.sample(parents, k=count)
         return tuple(selected_parents)
 
     @abstractmethod
@@ -307,6 +348,7 @@ class GA:
     def __init__(
         self,
         population,
+        fitness_func,
         parents_count=2,
         crossover=UniformCrossover(),
         mutation=RandomMutation(),
@@ -314,6 +356,8 @@ class GA:
         expected_fitness=None,
     ) -> None:
         self._population = population
+        self._fitness_func = fitness_func
+        self._parents_count = parents_count
         self._crossover = crossover
         self._mutation = mutation
         self._max_generations = max_generations
@@ -326,8 +370,8 @@ class GA:
             (self._expected_fitness == temp_fitnes)
             or (generation == self._max_generations)
         ):
-            self._population.fitness(fitness_calculation)
-            parents = self._population.get_parents(parents_count)
+            self._population.fitness(self._fitness_func)
+            parents = self._population.get_parents(self._parents_count)
 
             temp_fitnes = parents[0].fitness
             print(f"Generation {generation} : {parents[0]}")
@@ -338,36 +382,3 @@ class GA:
             population.apply_mutation(self._mutation)
             self._population = population
             generation += 1
-
-
-################################################################################
-
-
-def fitness_calculation(chromosome):
-    return sum(
-        [
-            g.value == l
-            for g, l in zip(chromosome.genes_list, list("beornottobe"))
-        ]
-    )
-
-
-################################################################################
-
-
-if __name__ == "__main__":
-    chromosome_len = 5
-    init_population_size = 10
-    parents_count = 2
-
-    ct = ChromosomeTemplate([gtypes.StrType("lowercase")] * 11)
-    population = Population.generate_random_population(init_population_size, ct)
-
-    ga = GA(
-        population,
-        6,
-        MultipointCrossover(),
-        RandomMutation(mutation_probability=0.01),
-        expected_fitness=11,
-    )
-    ga.start()
