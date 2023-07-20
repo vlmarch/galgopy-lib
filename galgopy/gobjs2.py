@@ -180,16 +180,16 @@ class Crossover(ABC):
         self._next_population_size = next_population_size
         self._proportionate_selection = proportionate_selection
 
-    def _select_parents(self):
+    def _select_parents(self, count=2):
         if self._proportionate_selection:
             weights = [p.fitness for p in self._parents]
             if sum(weights) == 0:
                 weights = [1] * len(weights)
             selected_parents = random.choices(
-                self._parents, weights=weights, k=2
+                self._parents, weights=weights, k=count
             )
         else:
-            selected_parents = random.sample(self._parents, k=2)
+            selected_parents = random.sample(self._parents, k=count)
         return tuple(selected_parents)
 
     @abstractmethod
@@ -200,7 +200,7 @@ class Crossover(ABC):
 class OnePointCrossover(Crossover):
     def generate_new_population(self):
         new_population_list = []
-        for i in range(round(self._next_population_size / 2)):
+        for _ in range(round(self._next_population_size / 2)):
             p1, p2 = self._select_parents()
             cut_point = random.randint(1, len(p1) - 1)
             c1 = Chromosome(p1[:cut_point] + p2[cut_point:])
@@ -224,7 +224,7 @@ class MultipointCrossover(Crossover):
 
     def generate_new_population(self):
         new_population_list = []
-        for i in range(round(self._next_population_size / 2)):
+        for _ in range(round(self._next_population_size / 2)):
             p1, p2 = self._select_parents()
 
             cut_points = sorted(
@@ -256,12 +256,27 @@ class MultipointCrossover(Crossover):
         return Population(new_population_list)
 
 
-# class UniformCrossover(Crossover):
-#     def __init__(self) -> None:
-#         super().__init__()
+class UniformCrossover(Crossover):
+    def generate_new_population(self):
+        new_population_list = []
+        for _ in range(round(self._next_population_size / 2)):
+            p1, p2 = self._select_parents()
 
-#     def get_parents(self):
-#         pass
+            c1 = []
+            c2 = []
+
+            for g1, g2 in zip(p1, p2):
+                chance = random.random()
+                if chance < 0.5:
+                    c1.append(g1)
+                    c2.append(g2)
+                else:
+                    c1.append(g2)
+                    c2.append(g1)
+            new_population_list.append(Chromosome(c1))
+            new_population_list.append(Chromosome(c2))
+        return Population(new_population_list)
+
 
 ################################################################################
 
@@ -318,7 +333,10 @@ if __name__ == "__main__":
         fitness = parents[0].fitness
         print(parents[0])
 
-        crossover = MultipointCrossover(parents, init_population_size)
+        # crossover = MultipointCrossover(parents, init_population_size)
+        # population = crossover.generate_new_population()
+
+        crossover = UniformCrossover(parents, init_population_size)
         population = crossover.generate_new_population()
 
         mutation = RandomMutation(population, mutation_probability=0.1)
