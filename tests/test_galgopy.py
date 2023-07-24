@@ -18,6 +18,17 @@ validation_data = [
     (0.5, gtypes.IntType(), False),
     (5, gtypes.IntType(), True),
     ("a", gtypes.IntType(), False),
+    (0.5, gtypes.StrType(), False),
+    (5, gtypes.StrType(), False),
+    ("a", gtypes.StrType(), True),
+    ("a", gtypes.StrType("lowercase"), True),
+    ("A", gtypes.StrType("lowercase"), False),
+    ("a", gtypes.StrType("uppercase"), False),
+    ("A", gtypes.StrType("uppercase"), True),
+    ("*", gtypes.StrType(), False),
+    ("*", gtypes.CostumeType(["*", "a", 1]), True),
+    ("a", gtypes.CostumeType(["*", "a", 1]), True),
+    ("A", gtypes.CostumeType(["*", "a", 1]), False),
 ]
 
 
