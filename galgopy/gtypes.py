@@ -63,26 +63,24 @@ class IntType(AbstractGeneType):
 
 
 class FloatType(AbstractGeneType):
-    def __init__(self, min_val=0, max_val=9, ndigits=2) -> None:
+    def __init__(self, min_val=0, max_val=9) -> None:
         super().__init__()
         self._min_val = min(min_val, max_val)
         self._max_val = max(min_val, max_val)
-        self._ndigits = ndigits
 
     def __str__(self) -> str:
-        return f"FloatType(min={self._min_val} max={self._max_val} ndigits={self._ndigits})"
+        return f"FloatType(min={self._min_val} max={self._max_val})"
 
     def __eq__(self, __o: object) -> bool:
         return (
             isinstance(__o, type(self))
             and (self._min_val == __o._min_val)
             and (self._max_val == __o._max_val)
-            and (self._ndigits == __o._ndigits)
         )
 
     def get_random_val(self):
         num = random.random() * (self._max_val - self._min_val) + self._min_val
-        return round(num, ndigits=self._ndigits)
+        return num
 
     def validate(self, n):
         return isinstance(n, numbers.Number) and (
@@ -94,7 +92,9 @@ class StrType(AbstractGeneType):
     def __init__(self, mode="all") -> None:
         super().__init__()
         if mode not in ["all", "lowercase", "uppercase"]:
-            raise ValueError("Invalid mode")
+            raise ValueError(
+                f"'{mode}' mode is not correct. Modes of choice: 'all', 'lowercase', 'uppercase'."
+            )
         self._mode = mode
         if self._mode == "lowercase":
             self._data = list(string.ascii_lowercase)
