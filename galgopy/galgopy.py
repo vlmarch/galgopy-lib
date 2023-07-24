@@ -19,7 +19,7 @@ class Gene:
         """
         if not gene_type.validate(value):
             raise ValueError(
-                "The given gene value does not correspond to its type."
+                f"The given gene value ({value}) does not correspond to its type ({gene_type})."
             )
         self._value = value
         self._gene_type = gene_type
@@ -35,7 +35,7 @@ class Gene:
     @value.setter
     def value(self, value):
         if not self._gene_type.validate(value):
-            raise ValueError()
+            raise ValueError("Changing 'value' properties is not allowed.")
         self._value = value
 
     @property
@@ -45,7 +45,7 @@ class Gene:
 
     @gene_type.setter
     def gene_type(self, value):
-        raise ValueError()
+        raise ValueError("Changing 'gene_type' properties is not allowed.")
 
     @staticmethod
     def generate_random_gene(gene_type=BinaryType()):
@@ -87,7 +87,7 @@ class ChromosomeTemplate:
 
     @types_list.setter
     def types_list(self, value):
-        raise ValueError()
+        raise ValueError("Changing 'types_list' properties is not allowed.")
 
 
 class Chromosome:
@@ -105,7 +105,7 @@ class Chromosome:
         """
         if not genes_list or any([not isinstance(g, Gene) for g in genes_list]):
             raise ValueError(
-                "Invalid list of gens. The list should contain only genes."
+                "Invalid genes list. The list should contain only genes and it can't be empty."
             )
         self._genes_list = genes_list
         self._chromosome_tmplt = ChromosomeTemplate(
@@ -129,22 +129,27 @@ class Chromosome:
 
     @property
     def genes_list(self):
+        """List of genes in the chromosome."""
         return self._genes_list
 
     @genes_list.setter
     def genes_list(self, value):
-        raise ValueError()
+        raise ValueError("Changing 'genes_list' properties is not allowed.")
 
     @property
     def chromosome_tmplt(self):
+        """Chromosome template."""
         return self._chromosome_tmplt
 
     @chromosome_tmplt.setter
     def chromosome_tmplt(self, value):
-        raise ValueError()
+        raise ValueError(
+            "Changing 'chromosome_tmplt' properties is not allowed."
+        )
 
     @property
     def fitness(self):
+        """The fitness value of chromosomes."""
         return self._fitness
 
     @fitness.setter
@@ -153,6 +158,14 @@ class Chromosome:
 
     @staticmethod
     def generate_random_chromosome(chromosome_tmplt: ChromosomeTemplate):
+        """Creates a chromosome with random genes values based on a template.
+
+        Args:
+            chromosome_tmplt (ChromosomeTemplate): Chromosome template.
+
+        Returns:
+            Chromosome: Random chromosome.
+        """
         chromosome = Chromosome(
             [Gene.generate_random_gene(t) for t in chromosome_tmplt.types_list]
         )
@@ -167,7 +180,9 @@ class Population:
                 for c in chromosome_list
             ]
         ):
-            raise ValueError
+            raise ValueError(
+                "Not all chromosomes in the given list have the same template."
+            )
         self._chromosome_list = chromosome_list
         self._index = 0
 
@@ -185,7 +200,9 @@ class Population:
 
     @chromosome_list.setter
     def chromosome_list(self, value):
-        raise ValueError()
+        raise ValueError(
+            "Changing 'chromosome_list' properties is not allowed."
+        )
 
     def fitness(self, func, mode="maximize"):
         for c in self._chromosome_list:
@@ -196,9 +213,11 @@ class Population:
 
     def get_parents(self, parents_count=2):
         if parents_count > len(self._chromosome_list):
-            raise ValueError()
+            raise ValueError(
+                f"The number of parents given ({parents_count}) is greater than the number of chromosomes ({len(self._chromosome_list)})."
+            )
         elif parents_count < 1:
-            raise ValueError()
+            raise ValueError("The number of parents should be greater than 0.")
         return self._chromosome_list[:parents_count]
 
     def apply_mutation(self, mutation):
