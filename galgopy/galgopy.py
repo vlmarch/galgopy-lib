@@ -112,6 +112,7 @@ class Chromosome:
             [g.gene_type for g in genes_list]
         )
         self._fitness = 0
+        self._proportional_fitness = 0
 
     def __str__(self) -> str:
         return (
@@ -156,6 +157,15 @@ class Chromosome:
     def fitness(self, value):
         self._fitness = value
 
+    @property
+    def proportional_fitness(self):
+        """The proportional fitness value of chromosomes."""
+        return self._proportional_fitness
+
+    @proportional_fitness.setter
+    def proportional_fitness(self, value):
+        self._proportional_fitness = value
+
     @staticmethod
     def generate_random_chromosome(chromosome_tmplt: ChromosomeTemplate):
         """Creates a chromosome with random genes values based on a template.
@@ -173,7 +183,17 @@ class Chromosome:
 
 
 class Population:
+    """Population implementation."""
+
     def __init__(self, chromosome_list):
+        """Chromosome population.
+
+        Args:
+            chromosome_list (list): Chromosome list.
+
+        Raises:
+            ValueError: Not all chromosomes in the given list have the same template.
+        """
         if any(
             [
                 c.chromosome_tmplt != chromosome_list[0].chromosome_tmplt
@@ -184,7 +204,7 @@ class Population:
                 "Not all chromosomes in the given list have the same template."
             )
         self._chromosome_list = chromosome_list
-        self._index = 0
+        self._fitness_mode = "maximize"
 
     def __str__(self) -> str:
         return "Population(\n    {}\n    )".format(
@@ -196,6 +216,7 @@ class Population:
 
     @property
     def chromosome_list(self):
+        """List of chromosomes included in the population."""
         return self._chromosome_list
 
     @chromosome_list.setter
@@ -205,6 +226,20 @@ class Population:
         )
 
     def fitness(self, func, mode="maximize"):
+        """Applies fitness function to the population.
+
+        Args:
+            func (function): Fitness function.
+            mode (str, optional): Fitness mode. Options: "maximize" and "minimize". Defaults to "maximize".
+
+        Raises:
+            ValueError: Invalid mode.
+        """
+        if mode not in ["maximize", "minimize"]:
+            raise ValueError(
+                f"'{mode}' mode is not correct. Modes of choice: 'maximize' and 'minimize'."
+            )
+        self._fitness_mode = mode
         for c in self._chromosome_list:
             c.fitness = func(c)
         self._chromosome_list.sort()
@@ -212,13 +247,37 @@ class Population:
             self._chromosome_list.reverse()
 
     def get_parents(self, parents_count=2):
+        """Returns a list of the best parents.
+
+        Args:
+            parents_count (int, optional): The number of parents for the next generation.. Defaults to 2.
+
+        Raises:
+            ValueError: Invalid number of parents.
+        Returns:
+            list: Selected parents.
+        """
         if parents_count > len(self._chromosome_list):
             raise ValueError(
                 f"The number of parents given ({parents_count}) is greater than the number of chromosomes ({len(self._chromosome_list)})."
             )
         elif parents_count < 1:
             raise ValueError("The number of parents should be greater than 0.")
-        return self._chromosome_list[:parents_count]
+
+        selected_parents = self._chromosome_list[:parents_count]
+
+        fitness_sum = sum([p.fitness for p in selected_parents])
+
+        for p in selected_parents:
+            if self._fitness_mode == "maximize":
+                p.proportional_fitness = p.fitness / fitness_sum
+            else:  # "minimize"
+                p.proportional_fitness = (
+                    1 - p.fitness / fitness_sum
+                ) / fitness_sum
+
+        # Add calc proportional fitness
+        return selected_parents
 
     def apply_mutation(self, mutation):
         for i, chromosome in enumerate(self._chromosome_list):
@@ -245,7 +304,7 @@ class AbstractCrossover(ABC):
 
     def _select_parents(self, parents, count=2):
         if self._proportionate_selection:
-            weights = [p.fitness for p in parents]
+            weights = [p.proportional_fitness for p in parents]
             if sum(weights) == 0:
                 weights = [1] * len(weights)
             selected_parents = random.choices(parents, weights=weights, k=count)
@@ -368,14 +427,16 @@ class GA:
         self,
         population,
         fitness_func,
+        fitness_mode="maximize",
         parents_count=2,
         crossover=UniformCrossover(),
         mutation=RandomMutation(),
-        max_generations=10000,
+        max_generations=100,
         expected_fitness=None,
     ) -> None:
         self._population = population
         self._fitness_func = fitness_func
+        self._fitness_mode = fitness_mode
         self._parents_count = parents_count
         self._crossover = crossover
         self._mutation = mutation
@@ -383,17 +444,21 @@ class GA:
         self._expected_fitness = expected_fitness
 
     def start(self):
-        temp_fitnes = 0
+        temp_fitnes = None
         generation = 1
         while not (
-            (self._expected_fitness == temp_fitnes)
+            (self._expected_fitness == temp_fitnes != None)
             or (generation == self._max_generations)
         ):
-            self._population.fitness(self._fitness_func)
+            self._population.fitness(
+                self._fitness_func, mode=self._fitness_mode
+            )
             parents = self._population.get_parents(self._parents_count)
 
             temp_fitnes = parents[0].fitness
-            print(f"Generation {generation} : {parents[0]}")
+            print(
+                f"Generation {generation}: {parents[0]}. Fitness: {parents[0].fitness}."
+            )
 
             population = self._crossover.generate_new_population(
                 parents, len(self._population)
