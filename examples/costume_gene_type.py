@@ -23,6 +23,9 @@ population = Population.generate_random_population(
 )
 
 ga = GA(
-    population=population, fitness_func=fitness_calc, expected_fitness=len(STR)
+    population=population,
+    fitness_func=fitness_calc,
+    expected_fitness=len(STR),
+    max_generations=10000,
 )
 ga.start()
