@@ -1,4 +1,15 @@
-from .genetypes import BinaryType, FloatType, IntType, StrType
+# -*- coding: utf-8 -*-
+"""Module with basic objects for Genetic Algorithm.
+
+Module includes:
+    Gene
+    ChromosomeTemplate
+    Chromosome
+    Population
+
+"""
+
+from .genetypes import AbstractGeneType, BinaryType, FloatType, IntType, StrType
 
 
 class Gene:
@@ -66,7 +77,16 @@ class ChromosomeTemplate:
         Args:
             types_list (list, optional): List of gene types included in the
                 chromosome. Defaults to [BinaryType() for i in range(8)].
+
+        Raises:
+            ValueError: Invalid list of types.
         """
+        if not types_list or not all(
+            isinstance(t, AbstractGeneType) for t in types_list
+        ):
+            raise ValueError(
+                "Invalid list of types. The list should contain only gene typs and it can't be empty."
+            )
         self._types_list = types_list
 
     def __str__(self) -> str:
@@ -86,7 +106,7 @@ class ChromosomeTemplate:
     def types_list(self, value):
         raise ValueError("Changing 'types_list' properties is not allowed.")
 
-    def is_same_types(self) -> bool:
+    def are_same_types(self) -> bool:
         """Checks if all types of genes the same.
 
         Returns:
@@ -94,37 +114,16 @@ class ChromosomeTemplate:
         """
         return all(self._types_list[0] == t for t in self._types_list)
 
-    def is_binary_types(self) -> bool:
-        """Checks that all types BinaryType.
+    def types_of_class(self, type_class: AbstractGeneType = BinaryType) -> bool:
+        """Checks that all types of type_class.
+
+        Args:
+            type_class (AbstractGeneType, optional): Gene type class. Defaults to BinaryType.
 
         Returns:
-            bool: True - if all of the BinaryType type.
+            bool: True - if all of the type_class type.
         """
-        return all(isinstance(t, BinaryType) for t in self._types_list)
-
-    def is_int_types(self) -> bool:
-        """Checks that all types IntType.
-
-        Returns:
-            bool: True - if all of the IntType type.
-        """
-        return all(isinstance(t, IntType) for t in self._types_list)
-
-    def is_float_types(self) -> bool:
-        """Checks that all types FloatType.
-
-        Returns:
-            bool: True - if all of the FloatType type.
-        """
-        return all(isinstance(t, FloatType) for t in self._types_list)
-
-    def is_str_types(self) -> bool:
-        """Checks that all types StrType.
-
-        Returns:
-            bool: True - if all of the StrType type.
-        """
-        return all(isinstance(t, StrType) for t in self._types_list)
+        return all(isinstance(t, type_class) for t in self._types_list)
 
 
 class Chromosome:
