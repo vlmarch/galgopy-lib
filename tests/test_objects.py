@@ -41,4 +41,53 @@ def test_init_gene(val, gene_type, expected):
         assert False == expected
 
 
+init_ct_data = [
+    ([], False),
+    ([1, 2], False),
+    ([genetypes.BinaryType()], True),
+    ([genetypes.BinaryType(), 1], False),
+    ([genetypes.BinaryType(), genetypes.IntType(), genetypes.StrType()], True),
+]
+
+
+@pytest.mark.parametrize("types_list, expected", init_ct_data)
+def test_init_chromosometemplate(types_list, expected):
+    try:
+        galgopy.ChromosomeTemplate(types_list)
+        assert True == expected
+    except ValueError:
+        assert False == expected
+
+
+same_types_ct_data = [
+    ([genetypes.BinaryType()], True),
+    ([genetypes.BinaryType(), genetypes.BinaryType()], True),
+    ([genetypes.BinaryType(), genetypes.IntType(), genetypes.StrType()], False),
+    ([genetypes.IntType(0, 2), genetypes.IntType()], False),
+]
+
+
+@pytest.mark.parametrize("types_list, expected", same_types_ct_data)
+def test_same_types_ct(types_list, expected):
+    ct = galgopy.ChromosomeTemplate(types_list)
+    assert ct.are_same_types() == expected
+
+
+types_of_class_ct_data = [
+    ([genetypes.BinaryType()], genetypes.BinaryType, True),
+    ([genetypes.IntType(), genetypes.IntType()], genetypes.IntType, True),
+    ([genetypes.IntType(0, 2), genetypes.IntType()], genetypes.IntType, True),
+    ([genetypes.IntType(), genetypes.BinaryType()], genetypes.IntType, False),
+    ([genetypes.IntType(), genetypes.IntType()], genetypes.BinaryType, False),
+]
+
+
+@pytest.mark.parametrize(
+    "types_list, type_class, expected", types_of_class_ct_data
+)
+def test_types_of_class_ct(types_list, type_class, expected):
+    ct = galgopy.ChromosomeTemplate(types_list)
+    assert ct.types_of_class(type_class) == expected
+
+
 ################################################################################
