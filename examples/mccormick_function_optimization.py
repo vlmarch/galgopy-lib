@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())
 import math
 
 from galgopy import GA, ChromosomeTemplate, Population
-from galgopy.gtypes import FloatType
+from galgopy.genetypes import FloatType
 
 
 def fitness_calc(chromosome):

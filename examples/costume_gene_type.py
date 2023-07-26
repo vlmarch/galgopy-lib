@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())
 import string
 
 from galgopy import GA, ChromosomeTemplate, Population
-from galgopy.gtypes import CostumeType
+from galgopy.genetypes import CostumeType
 
 STR = "To be, or not to be"
 
