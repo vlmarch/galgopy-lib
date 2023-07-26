@@ -8,7 +8,7 @@ import pytest
 import galgopy as galgopy
 import galgopy.genetypes as genetypes
 
-validation_data = [
+init_gene_data = [
     (1, genetypes.BinaryType(), True),
     (0, genetypes.BinaryType(), True),
     (0.5, genetypes.BinaryType(), False),
@@ -32,10 +32,13 @@ validation_data = [
 ]
 
 
-@pytest.mark.parametrize("val, gene_type, expected", validation_data)
+@pytest.mark.parametrize("val, gene_type, expected", init_gene_data)
 def test_init_gene(val, gene_type, expected):
     try:
         galgopy.Gene(val, gene_type)
         assert True == expected
     except ValueError:
         assert False == expected
+
+
+################################################################################
