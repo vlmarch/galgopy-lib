@@ -1,4 +1,4 @@
-from .genetypes import BinaryType
+from .genetypes import BinaryType, FloatType, IntType, StrType
 
 
 class Gene:
@@ -85,6 +85,46 @@ class ChromosomeTemplate:
     @types_list.setter
     def types_list(self, value):
         raise ValueError("Changing 'types_list' properties is not allowed.")
+
+    def is_same_types(self) -> bool:
+        """Checks if all types of genes the same.
+
+        Returns:
+            bool: True - if all types of genes the same.
+        """
+        return all(self._types_list[0] == t for t in self._types_list)
+
+    def is_binary_types(self) -> bool:
+        """Checks that all types BinaryType.
+
+        Returns:
+            bool: True - if all of the BinaryType type.
+        """
+        return all(isinstance(t, BinaryType) for t in self._types_list)
+
+    def is_int_types(self) -> bool:
+        """Checks that all types IntType.
+
+        Returns:
+            bool: True - if all of the IntType type.
+        """
+        return all(isinstance(t, IntType) for t in self._types_list)
+
+    def is_float_types(self) -> bool:
+        """Checks that all types FloatType.
+
+        Returns:
+            bool: True - if all of the FloatType type.
+        """
+        return all(isinstance(t, FloatType) for t in self._types_list)
+
+    def is_str_types(self) -> bool:
+        """Checks that all types StrType.
+
+        Returns:
+            bool: True - if all of the StrType type.
+        """
+        return all(isinstance(t, StrType) for t in self._types_list)
 
 
 class Chromosome:
@@ -192,10 +232,8 @@ class Population:
             ValueError: Not all chromosomes in the given list have the same template.
         """
         if any(
-            [
-                c.chromosome_tmplt != chromosome_list[0].chromosome_tmplt
-                for c in chromosome_list
-            ]
+            c.chromosome_tmplt != chromosome_list[0].chromosome_tmplt
+            for c in chromosome_list
         ):
             raise ValueError(
                 "Not all chromosomes in the given list have the same template."
@@ -260,13 +298,13 @@ class Population:
             raise ValueError(
                 f"The number of parents given ({parents_count}) is greater than the number of chromosomes ({len(self._chromosome_list)})."
             )
-        elif parents_count < 1:
+        if parents_count < 1:
             raise ValueError("The number of parents should be greater than 0.")
 
         selected_parents = self._chromosome_list[:parents_count]
 
-        fitness_min = min([p.fitness for p in selected_parents])
-        fitness_sum = sum([p.fitness - fitness_min for p in selected_parents])
+        fitness_min = min(p.fitness for p in selected_parents)
+        fitness_sum = sum(p.fitness - fitness_min for p in selected_parents)
 
         for parent in selected_parents:
             if fitness_sum == 0:
