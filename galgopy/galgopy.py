@@ -230,7 +230,8 @@ class Population:
 
         Args:
             func (function): Fitness function.
-            mode (str, optional): Fitness mode. Options: "maximize" and "minimize". Defaults to "maximize".
+            mode (str, optional): Fitness mode. Options: "maximize" and
+                "minimize". Defaults to "maximize".
 
         Raises:
             ValueError: Invalid mode.
@@ -240,8 +241,8 @@ class Population:
                 f"'{mode}' mode is not correct. Modes of choice: 'maximize' and 'minimize'."
             )
         self._fitness_mode = mode
-        for c in self._chromosome_list:
-            c.fitness = func(c)
+        for chromosome in self._chromosome_list:
+            chromosome.fitness = func(chromosome)
         self._chromosome_list.sort()
         if mode == "maximize":
             self._chromosome_list.reverse()
@@ -250,7 +251,8 @@ class Population:
         """Returns a list of the best parents.
 
         Args:
-            parents_count (int, optional): The number of parents for the next generation.. Defaults to 2.
+            parents_count (int, optional): The number of parents for the next
+                generation. Defaults to 2.
 
         Raises:
             ValueError: Invalid number of parents.
@@ -266,27 +268,46 @@ class Population:
 
         selected_parents = self._chromosome_list[:parents_count]
 
-        fitness_sum = sum([p.fitness for p in selected_parents])
+        fitness_min = min([p.fitness for p in selected_parents])
+        fitness_max = max([p.fitness for p in selected_parents])
 
-        for p in selected_parents:
-            if self._fitness_mode == "maximize":
-                p.proportional_fitness = p.fitness / fitness_sum
+        for parent in selected_parents:
+            if fitness_min == fitness_max:
+                parent.proportional_fitness = 1 / parents_count
+            elif self._fitness_mode == "maximize":
+                parent.proportional_fitness = (parent.fitness - fitness_min) / (
+                    fitness_max - fitness_min
+                )
             else:  # "minimize"
-                p.proportional_fitness = (
-                    1 - p.fitness / fitness_sum
-                ) / fitness_sum
-
-        # Add calc proportional fitness
+                parent.proportional_fitness = (
+                    -(parent.fitness - fitness_min)
+                    / (fitness_max - fitness_min)
+                    + 1
+                )
         return selected_parents
 
     def apply_mutation(self, mutation):
+        """Apply mutations for populations.
+
+        Args:
+            mutation: Mutation object that inherits class AbstractMutation.
+        """
         for i, chromosome in enumerate(self._chromosome_list):
-            self._chromosome_list[i] = mutation._apply_mutation(chromosome)
+            self._chromosome_list[i] = mutation.apply_mutation(chromosome)
 
     @staticmethod
     def generate_random_population(
         population_size, chromosome_tmplt: ChromosomeTemplate
     ):
+        """Creates a random population.
+
+        Args:
+            population_size (int): The number of cromosomes in the population.
+            chromosome_tmplt (ChromosomeTemplate): Chromosome template.
+
+        Returns:
+            Population: New random poulation.
+        """
         return Population(
             [
                 Chromosome.generate_random_chromosome(chromosome_tmplt)
@@ -405,12 +426,12 @@ class AbstractMutation(ABC):
         self._mutation_probability = mutation_probability
 
     @abstractmethod
-    def _apply_mutation(self, chromosome):
+    def apply_mutation(self, chromosome):
         pass
 
 
 class RandomMutation(AbstractMutation):
-    def _apply_mutation(self, chromosome):
+    def apply_mutation(self, chromosome):
         for i, g in enumerate(chromosome.genes_list):
             if random.random() <= self._mutation_probability:
                 chromosome.genes_list[i] = Gene.generate_random_gene(
