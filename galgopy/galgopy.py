@@ -1,7 +1,7 @@
 import random
 from abc import ABC, abstractmethod
 
-from .gtypes import *
+from .genetypes import *
 
 
 class Gene:
@@ -274,7 +274,7 @@ class Population:
         for parent in selected_parents:
             if fitness_sum == 0:
                 parent.proportional_fitness = 1 / parents_count
-            if self._fitness_mode == "maximize":
+            elif self._fitness_mode == "maximize":
                 parent.proportional_fitness = (
                     parent.fitness - fitness_min
                 ) / fitness_sum
