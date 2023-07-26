@@ -269,21 +269,19 @@ class Population:
         selected_parents = self._chromosome_list[:parents_count]
 
         fitness_min = min([p.fitness for p in selected_parents])
-        fitness_max = max([p.fitness for p in selected_parents])
+        fitness_sum = sum([p.fitness - fitness_min for p in selected_parents])
 
         for parent in selected_parents:
-            if fitness_min == fitness_max:
+            if fitness_sum == 0:
                 parent.proportional_fitness = 1 / parents_count
-            elif self._fitness_mode == "maximize":
-                parent.proportional_fitness = (parent.fitness - fitness_min) / (
-                    fitness_max - fitness_min
-                )
+            if self._fitness_mode == "maximize":
+                parent.proportional_fitness = (
+                    parent.fitness - fitness_min
+                ) / fitness_sum
             else:  # "minimize"
                 parent.proportional_fitness = (
-                    -(parent.fitness - fitness_min)
-                    / (fitness_max - fitness_min)
-                    + 1
-                )
+                    1 - (parent.fitness - fitness_min) / fitness_sum
+                ) / fitness_sum
         return selected_parents
 
     def apply_mutation(self, mutation):
@@ -326,8 +324,6 @@ class AbstractCrossover(ABC):
     def _select_parents(self, parents, count=2):
         if self._proportionate_selection:
             weights = [p.proportional_fitness for p in parents]
-            if sum(weights) == 0:
-                weights = [1] * len(weights)
             selected_parents = random.choices(parents, weights=weights, k=count)
         else:
             selected_parents = random.sample(parents, k=count)
