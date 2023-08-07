@@ -230,8 +230,15 @@ class Population:
             chromosome_list (list): Chromosome list.
 
         Raises:
+            ValueError: Invalid list of chromosomes.
             ValueError: Not all chromosomes in the given list have the same template.
         """
+        if not chromosome_list or any(
+            [not isinstance(g, Chromosome) for g in chromosome_list]
+        ):
+            raise ValueError(
+                "Invalid chromosomes list. The list should contain only chromosomes and it can't be empty."
+            )
         if any(
             c.chromosome_tmplt != chromosome_list[0].chromosome_tmplt
             for c in chromosome_list
@@ -307,6 +314,7 @@ class Population:
 
         Raises:
             ValueError: Invalid number of parents.
+
         Returns:
             Population: Population of selected parents.
         """
@@ -319,19 +327,21 @@ class Population:
 
         selected_parents = self._chromosome_list[:parents_count]
 
-        fitness_min = min(p.fitness for p in selected_parents)
-        fitness_sum = sum(p.fitness - fitness_min for p in selected_parents)
+        if self._fitness_mode == "maximize":
+            fitness_min = min(p.fitness for p in selected_parents)
+            fitness_sum = sum(p.fitness - fitness_min for p in selected_parents)
+        else:  # "minimize"
+            fitness_min = min(-p.fitness for p in selected_parents)
+            fitness_sum = sum(
+                -p.fitness - fitness_min for p in selected_parents
+            )
 
         for parent in selected_parents:
             if fitness_sum == 0 or math.isinf(fitness_sum):
                 parent.proportional_fitness = 1 / parents_count
-            elif self._fitness_mode == "maximize":
+            else:
                 parent.proportional_fitness = (
                     parent.fitness - fitness_min
-                ) / fitness_sum
-            else:  # "minimize"
-                parent.proportional_fitness = (
-                    1 - (parent.fitness - fitness_min) / fitness_sum
                 ) / fitness_sum
         return Population(selected_parents)
 
