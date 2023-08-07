@@ -9,7 +9,9 @@ Module includes:
 
 """
 
-from .genetypes import AbstractGeneType, BinaryType, FloatType, IntType, StrType
+import math
+
+from .genetypes import AbstractGeneType, BinaryType
 
 
 class Gene:
@@ -98,7 +100,7 @@ class ChromosomeTemplate:
         )
 
     @property
-    def types_list(self):
+    def types_list(self) -> list:
         """List of gene types included in the chromosome."""
         return self._types_list
 
@@ -165,7 +167,7 @@ class Chromosome:
         return self._genes_list[i]
 
     @property
-    def genes_list(self):
+    def genes_list(self) -> list:
         """List of genes in the chromosome."""
         return self._genes_list
 
@@ -174,7 +176,7 @@ class Chromosome:
         raise ValueError("Changing 'genes_list' properties is not allowed.")
 
     @property
-    def chromosome_tmplt(self):
+    def chromosome_tmplt(self) -> ChromosomeTemplate:
         """Chromosome template."""
         return self._chromosome_tmplt
 
@@ -185,7 +187,7 @@ class Chromosome:
         )
 
     @property
-    def fitness(self):
+    def fitness(self) -> float:
         """The fitness value of chromosomes."""
         return self._fitness
 
@@ -194,7 +196,7 @@ class Chromosome:
         self._fitness = value
 
     @property
-    def proportional_fitness(self):
+    def proportional_fitness(self) -> float:
         """The proportional fitness value of chromosomes."""
         return self._proportional_fitness
 
@@ -237,6 +239,7 @@ class Population:
             raise ValueError(
                 "Not all chromosomes in the given list have the same template."
             )
+        self._chromosome_tmplt = chromosome_list[0].chromosome_tmplt
         self._chromosome_list = chromosome_list
         self._fitness_mode = "maximize"
 
@@ -248,8 +251,11 @@ class Population:
     def __len__(self) -> int:
         return len(self._chromosome_list)
 
+    def __getitem__(self, i) -> Chromosome:
+        return self._chromosome_list[i]
+
     @property
-    def chromosome_list(self):
+    def chromosome_list(self) -> list:
         """List of chromosomes included in the population."""
         return self._chromosome_list
 
@@ -257,6 +263,17 @@ class Population:
     def chromosome_list(self, value):
         raise ValueError(
             "Changing 'chromosome_list' properties is not allowed."
+        )
+
+    @property
+    def chromosome_tmplt(self) -> ChromosomeTemplate:
+        """Chromosome template."""
+        return self._chromosome_tmplt
+
+    @chromosome_tmplt.setter
+    def chromosome_tmplt(self, value):
+        raise ValueError(
+            "Changing 'chromosome_tmplt' properties is not allowed."
         )
 
     def fitness(self, func, mode="maximize"):
@@ -291,7 +308,7 @@ class Population:
         Raises:
             ValueError: Invalid number of parents.
         Returns:
-            list: Selected parents.
+            Population: Population of selected parents.
         """
         if parents_count > len(self._chromosome_list):
             raise ValueError(
@@ -306,7 +323,7 @@ class Population:
         fitness_sum = sum(p.fitness - fitness_min for p in selected_parents)
 
         for parent in selected_parents:
-            if fitness_sum == 0:
+            if fitness_sum == 0 or math.isinf(fitness_sum):
                 parent.proportional_fitness = 1 / parents_count
             elif self._fitness_mode == "maximize":
                 parent.proportional_fitness = (
@@ -316,7 +333,7 @@ class Population:
                 parent.proportional_fitness = (
                     1 - (parent.fitness - fitness_min) / fitness_sum
                 ) / fitness_sum
-        return selected_parents
+        return Population(selected_parents)
 
     def apply_mutation(self, mutation):
         """Apply mutations for populations.
