@@ -111,7 +111,7 @@ class MultipointCrossover(AbstractCrossover):
             perent1, perent2 = self._select_parents(parents)
 
             cut_points = sorted(
-                random.sample(range(1, len(perent1)), k=self._cut_points_count)
+                random.sample(range(len(perent1)), k=self._cut_points_count)
             )
 
             child1 = []
@@ -182,7 +182,7 @@ class IntermediateRecombinationCrossover(AbstractCrossover):
             a (float, optional): a value. Defaults to 0.5.
 
         Raises:
-            ValueError: _description_
+            ValueError: Invalid value of a. a should be 0 <= a <= 1
         """
         super().__init__(proportionate_selection)
         if not (0 <= a <= 1):
