@@ -244,6 +244,13 @@ def test_get_parents_data1(chromosome_list, parents_count, expected):
         assert False == expected
 
 
+chromosome_list2 = [
+    galgopy.Chromosome([galgopy.Gene(-0.75, genetypes.FloatType(-1))]),
+    galgopy.Chromosome([galgopy.Gene(0.25, genetypes.FloatType(-1))]),
+    galgopy.Chromosome([galgopy.Gene(0, genetypes.FloatType(-1))]),
+]
+
+
 population_get_parents_data2 = [
     (
         chromosome_list,
@@ -258,6 +265,34 @@ population_get_parents_data2 = [
         "minimize",
         3,
         3 / 5,
+    ),
+    (
+        chromosome_list2,
+        lambda x: sum([a.value for a in x]),
+        "maximize",
+        2,
+        1,
+    ),
+    (
+        chromosome_list2,
+        lambda x: sum([a.value for a in x]),
+        "minimize",
+        2,
+        1,
+    ),
+    (
+        chromosome_list2,
+        lambda x: sum([a.value for a in x]),
+        "maximize",
+        3,
+        1 / 1.75,
+    ),
+    (
+        chromosome_list2,
+        lambda x: sum([a.value for a in x]),
+        "minimize",
+        3,
+        1 / 1.25,
     ),
 ]
 

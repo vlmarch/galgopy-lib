@@ -337,11 +337,19 @@ class Population:
             )
 
         for parent in selected_parents:
-            if fitness_sum == 0 or math.isinf(fitness_sum):
+            if (
+                fitness_sum == 0
+                or math.isinf(fitness_sum)
+                or math.isinf(fitness_min)
+            ):
                 parent.proportional_fitness = 1 / parents_count
-            else:
+            elif self._fitness_mode == "maximize":
                 parent.proportional_fitness = (
                     parent.fitness - fitness_min
+                ) / fitness_sum
+            else:  # "minimize"
+                parent.proportional_fitness = (
+                    -parent.fitness - fitness_min
                 ) / fitness_sum
         return Population(selected_parents)
 
