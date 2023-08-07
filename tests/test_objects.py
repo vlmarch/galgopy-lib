@@ -5,7 +5,7 @@ sys.path.append(os.getcwd())
 
 import pytest
 
-import galgopy as galgopy
+import galgopy
 import galgopy.genetypes as genetypes
 
 init_gene_data = [
