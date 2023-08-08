@@ -99,7 +99,7 @@ class IntType(AbstractGeneType):
 
 
 class FloatType(AbstractGeneType):
-    """Implementation of float gene type. Possible options: [min_val, max_val)."""
+    """Implementation of float gene type. Possible options: [min_val, max_val]."""
 
     def __init__(self, min_val=0, max_val=1) -> None:
         """Float gene type.
@@ -123,12 +123,12 @@ class FloatType(AbstractGeneType):
         )
 
     def get_random_val(self):
-        num = random.random() * (self._max_val - self._min_val) + self._min_val
+        num = random.uniform(self._min_val, self._max_val)
         return num
 
     def validate(self, val):
         return isinstance(val, numbers.Number) and (
-            self._min_val <= val < self._max_val
+            self._min_val <= val <= self._max_val
         )
 
 
