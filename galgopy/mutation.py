@@ -80,7 +80,6 @@ class SwapMutation(AbstractMutation):
         new_genes_list = chromosome.genes_list.copy()
         if random.random() <= self._mutation_probability:
             points = random.sample(range(len(chromosome)), k=2)
-            print(points)
             new_genes_list[points[0]], new_genes_list[points[1]] = (
                 chromosome[points[1]],
                 chromosome[points[0]],
